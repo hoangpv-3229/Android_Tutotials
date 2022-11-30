@@ -11,6 +11,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/tut_3_activities_intents" />
+            <option value="$PROJECT_DIR$/tut_5_impicit_intents" />
           </set>
         </option>
       </GradleProjectSettings>
