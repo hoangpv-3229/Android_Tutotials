@@ -16,3 +16,5 @@ rootProject.name = "AndroidTutorial"
 include ':tut_3_activities_intents'
 include ':tut_5_impicit_intents'
 include ':tut_5_impicit_intents:testsendintenttoopenwebsite'
+include ':tut_6_fragments'
+include ':tut_6_fragments:project_2'
