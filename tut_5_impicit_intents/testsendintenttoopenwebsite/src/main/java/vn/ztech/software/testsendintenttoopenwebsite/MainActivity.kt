@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         btWeb = findViewById(R.id.btWeb)
 
         btWeb.setOnClickListener {
-            
+
             val intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse(etWeb.text.toString())
             if (intent.resolveActivity(packageManager)!=null){
