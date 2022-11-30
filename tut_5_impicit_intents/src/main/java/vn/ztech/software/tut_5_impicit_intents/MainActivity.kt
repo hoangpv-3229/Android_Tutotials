@@ -11,10 +11,21 @@ class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setViews()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIntent()
+    }
+    private fun handleIntent() {
+        intent.data?.let {
+            Toast.makeText(this, "Received intent ${it}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun setViews() {

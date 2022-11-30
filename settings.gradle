@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "AndroidTutorial"
 include ':tut_3_activities_intents'
 include ':tut_5_impicit_intents'
+include ':tut_5_impicit_intents:testsendintenttoopenwebsite'
