@@ -1,4 +1,4 @@
-package vn.ztech.software.tut_22_mvp
+package vn.ztech.software.tut_22_mvp.screen
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,6 +6,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import vn.ztech.software.tut_22_mvp.R
+import vn.ztech.software.tut_22_mvp.data.model.Song
 
 class SongAdapter(val songs: List<Song>, val onClick: OnClickListener): RecyclerView.Adapter<SongAdapter.SongViewHolder>() {
 

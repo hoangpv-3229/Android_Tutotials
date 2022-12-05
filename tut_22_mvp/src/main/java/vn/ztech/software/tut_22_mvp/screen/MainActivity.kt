@@ -1,4 +1,4 @@
-package vn.ztech.software.tut_22_mvp
+package vn.ztech.software.tut_22_mvp.screen
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -11,26 +11,31 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import vn.ztech.software.tut_22_mvp.service.MusicPlayerService
+import vn.ztech.software.tut_22_mvp.R
+import vn.ztech.software.tut_22_mvp.data.model.Song
+import vn.ztech.software.tut_22_mvp.data.repository.SongRepository
+import vn.ztech.software.tut_22_mvp.data.repository.source.local.SongLocalDataSource
+import vn.ztech.software.tut_22_mvp.data.repository.source.remote.SongRemoteDataSource
 import vn.ztech.software.tut_22_mvp.databinding.ActivityMainBinding
+import java.lang.Exception
 
-class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
+class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener, SongContract.View {
     lateinit var recycler: RecyclerView
     companion object{
         val CHANNEL_ID = "TEST_CHANNEL"
     }
     var isPlaying = false
     lateinit var binding: ActivityMainBinding
-
+    private lateinit var songPresenter: SongPresenter
     val broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             val bundle = intent?.extras
@@ -50,7 +55,7 @@ class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
     private fun handleAction(action: Int, song: Song) {
 
         when(action){
-            MusicPlayerService.ACTION_START->{
+            MusicPlayerService.ACTION_START ->{
                 binding.layoutMusic.root.visibility = View.VISIBLE
                 binding.layoutMusic.ivSong.setImageResource(R.drawable.ic_launcher_foreground)
                 binding.layoutMusic.tvName.text = song.name
@@ -64,17 +69,17 @@ class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
                     sendIntentToService(MusicPlayerService.ACTION_CANCEL)
                 }
             }
-            MusicPlayerService.ACTION_PLAY->{
+            MusicPlayerService.ACTION_PLAY ->{
                 if (isPlaying){
                     binding.layoutMusic.btPlayOrPause.setImageResource(R.drawable.ic_baseline_pause_circle_filled_24)
                 }
             }
-            MusicPlayerService.ACTION_PAUSE->{
+            MusicPlayerService.ACTION_PAUSE ->{
                 if (!isPlaying){
                     binding.layoutMusic.btPlayOrPause.setImageResource(R.drawable.ic_baseline_play_circle_filled_24)
                 }
             }
-            MusicPlayerService.ACTION_CANCEL->{
+            MusicPlayerService.ACTION_CANCEL ->{
                 binding.layoutMusic.root.visibility = View.GONE
             }
         }
@@ -95,35 +100,24 @@ class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
         createNotificationChannel()
 
         if (isPermissionGranted()){
-            showSongs()
+            getSongs()
         }
     }
-    private fun showSongs(){
-        val songs = getSongs()
-        val mediaPlayer =  MediaPlayer.create(applicationContext, songs[3].uri)
-        mediaPlayer.start()
+    private fun getSongs(){
+        songPresenter = SongPresenter(
+            SongRepository.getInstance(
+                SongLocalDataSource.getInstance(),
+                SongRemoteDataSource.getInstance()
+            ),
+            this)
+        songPresenter.getSongs(this)
+    }
+    private fun showSongs(songs: MutableList<Song>){
         val adapter = SongAdapter(songs, this)
         recycler.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL,false)
         recycler.adapter = adapter
     }
-    private fun getSongs(): List<Song> {
-        val NAME_COLLUM = MediaStore.Audio.Media.TITLE
-        val AUTHOR_COLLUM = MediaStore.Audio.Media.ARTIST
-        val URI_COLLUM = MediaStore.Audio.Media.DATA
 
-        val songs = mutableListOf<Song>()
-        val cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, arrayOf(NAME_COLLUM, AUTHOR_COLLUM, URI_COLLUM), null, null, NAME_COLLUM)
-        while (cursor?.moveToNext()?:false){
-
-            val name = cursor?.getString(0)?:"null"
-            val author = cursor?.getString(1)?:"null"
-            val uri = cursor?.getString(2)
-
-            songs.add(Song(name,author, Uri.parse(uri)))
-            Log.d("MainActivity", uri.toString())
-        }
-        return songs
-    }
     private fun isPermissionGranted(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if(checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
@@ -163,7 +157,7 @@ class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
         when(requestCode){
             1000->{
                 if (grantResults.isNotEmpty() && grantResults[0]==PackageManager.PERMISSION_GRANTED){
-                    showSongs()
+                    getSongs()
                 }else{
                     Toast.makeText(this, "You have disabled a contacts permission", Toast.LENGTH_LONG).show();
                 }
@@ -194,5 +188,19 @@ class MainActivity : AppCompatActivity(), SongAdapter.OnClickListener {
     override fun onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver)
         super.onDestroy()
+    }
+
+    override fun onGetSongsSuccess(songs: MutableList<Song>) {
+        showSongs(songs)
+    }
+
+    override fun onError(e: Exception) {
+        AlertDialog.Builder(this)
+            .setMessage("Error: ${e.message.toString()}")
+            .setCancelable(true)
+            .setPositiveButton("Oke", object : DialogInterface.OnClickListener{
+                override fun onClick(p0: DialogInterface?, p1: Int) {
+                }
+            })
     }
 }
