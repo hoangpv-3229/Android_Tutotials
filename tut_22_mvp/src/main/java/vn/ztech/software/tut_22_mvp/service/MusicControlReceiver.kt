@@ -1,4 +1,4 @@
-package vn.ztech.software.tut_22_mvp
+package vn.ztech.software.tut_22_mvp.service
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -1,4 +1,4 @@
-package vn.ztech.software.tut_22_mvp
+package vn.ztech.software.tut_22_mvp.service
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -6,12 +6,16 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import vn.ztech.software.tut_22_mvp.R
+import vn.ztech.software.tut_22_mvp.data.model.Song
+import vn.ztech.software.tut_22_mvp.screen.MainActivity
 
 class MusicPlayerService : Service() {
     companion object{
@@ -22,6 +26,7 @@ class MusicPlayerService : Service() {
     }
     var mediaPlayer: MediaPlayer? = null
     lateinit var currSong: Song
+    var prevSong = Song("","",Uri.parse(""))
     var isPlaying = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -29,8 +34,8 @@ class MusicPlayerService : Service() {
         bundle?.let {
             val song = it.getParcelable<Song>("SONG")
             song?.let{
-                currSong = it
                 playMusic(it)
+
                 startForeground(1, sendNotiMedia(it))
             }
         }
@@ -44,13 +49,13 @@ class MusicPlayerService : Service() {
 
     private fun handleAction(action: Int?, startId: Int) {
         when(action){
-            ACTION_CANCEL->{
+            ACTION_CANCEL ->{
                 stopSelf()
             }
-            ACTION_PLAY->{
+            ACTION_PLAY ->{
                 resumeMusic(startId)
             }
-            ACTION_PAUSE->{
+            ACTION_PAUSE ->{
                 pauseMusic(startId)
             }
             else->{
@@ -83,9 +88,17 @@ class MusicPlayerService : Service() {
     private fun playMusic(song: Song) {
         if (mediaPlayer==null){
             mediaPlayer = MediaPlayer.create(applicationContext, song.uri)
+        }else{
+            if(song.uri.toString() != currSong.uri.toString()){
+                mediaPlayer?.release()
+                mediaPlayer = null
+                mediaPlayer = MediaPlayer.create(applicationContext, song.uri)
+            }
         }
         mediaPlayer?.start()
         isPlaying = true
+        currSong = song
+
         sendBroadcastToActivity(ACTION_START)
     }
     private fun sendBroadcastToActivity(action: Int){
@@ -103,7 +116,9 @@ class MusicPlayerService : Service() {
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         val imgBitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
-        val overrideLargeIcon = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+        val overrideLargeIcon = BitmapFactory.decodeResource(resources,
+            R.drawable.ic_launcher_foreground
+        )
 
         return NotificationCompat.Builder(applicationContext,"foreground_service_channel")
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -112,8 +127,13 @@ class MusicPlayerService : Service() {
             .setLargeIcon(imgBitmap)
             .addAction(if (isPlaying) R.drawable.ic_baseline_pause_circle_filled_24 else R.drawable.ic_baseline_play_circle_filled_24,
                 if (isPlaying) "Pause" else "Play",
-                if (isPlaying) getPendingIntentControlMusic(ACTION_PAUSE) else getPendingIntentControlMusic(ACTION_PLAY))
-            .addAction(R.drawable.ic_baseline_cancel_24, "Cancel", getPendingIntentControlMusic(ACTION_CANCEL))
+                if (isPlaying) getPendingIntentControlMusic(ACTION_PAUSE) else getPendingIntentControlMusic(
+                    ACTION_PLAY
+                ))
+            .addAction(
+                R.drawable.ic_baseline_cancel_24, "Cancel", getPendingIntentControlMusic(
+                    ACTION_CANCEL
+                ))
             .setOngoing(true)
 //            .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
 //                .setShowActionsInCompactView(1))

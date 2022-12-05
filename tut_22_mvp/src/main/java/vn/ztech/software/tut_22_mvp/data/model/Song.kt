@@ -1,4 +1,4 @@
-package vn.ztech.software.tut_22_mvp
+package vn.ztech.software.tut_22_mvp.data.model
 
 import android.net.Uri
 import android.os.Parcelable
